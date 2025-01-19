@@ -1,0 +1,9 @@
+<library path="unitree_api_adapter">
+    <class name="unitree_api_adapter/UnitreeSdk2Adapter"
+           type="unitree_api_adapter::UnitreeSdk2Adapter"
+           base_class_type="controller_interface::ControllerInterface">
+        <description>
+            Adapter for the simulated Unitree robot to expose the same DDS interface as the real robot.
+        </description>
+    </class>
+</library>
