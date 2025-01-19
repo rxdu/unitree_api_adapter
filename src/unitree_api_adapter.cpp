@@ -43,6 +43,11 @@ UnitreeApiAdapter::state_interface_configuration() const {
   for (const auto &interface_type : imu_interface_types_) {
     conf.names.push_back(imu_name_ + "/" += interface_type);
   }
+  for (const auto &ft_sensor_name : ft_sensor_names_) {
+    for (const auto &interface_type : ft_sensor_interface_types_) {
+      conf.names.push_back(ft_sensor_name + "/" += interface_type);
+    }
+  }
 
   return conf;
 }
@@ -68,8 +73,15 @@ controller_interface::CallbackReturn UnitreeApiAdapter::on_init() {
       "state_interfaces", state_interface_types_);
   imu_interface_types_ = auto_declare<std::vector<std::string> >(
       "imu_interfaces", state_interface_types_);
+  ft_sensor_interface_types_ = auto_declare<std::vector<std::string> >(
+      "ft_sensor_interfaces", state_interface_types_);
 
   imu_name_ = auto_declare<std::string>("imu_name", imu_name_);
+  ft_sensor_suffix_ =
+      auto_declare<std::string>("ft_sensor_suffix", ft_sensor_suffix_);
+  ft_sensor_names_ = auto_declare<std::vector<std::string> >("ft_sensor_names",
+                                                             ft_sensor_names_);
+
   command_prefix_ =
       auto_declare<std::string>("command_prefix", command_prefix_);
 
@@ -103,6 +115,10 @@ controller_interface::CallbackReturn UnitreeApiAdapter::on_activate(
   for (auto &interface : state_interfaces_) {
     if (interface.get_prefix_name() == imu_name_) {
       imu_state_interface_.emplace_back(interface);
+    } else if (interface.get_prefix_name().find(ft_sensor_suffix_) !=
+               std::string::npos) {
+      ft_sensor_interface_map_[interface.get_interface_name()]->push_back(
+          interface);
     } else {
       state_interface_map_[interface.get_interface_name()]->push_back(
           interface);
@@ -140,9 +156,6 @@ controller_interface::CallbackReturn UnitreeApiAdapter::on_shutdown(
 }
 
 //////////////////////////////////////////////////////////////////////////////
-
-// using namespace unitree::common;
-// using namespace unitree::robot;
 
 #define TOPIC_LOWSTATE "rt/lowstate"
 #define TOPIC_HIGHSTATE "rt/sportmodestate"
@@ -218,6 +231,32 @@ void UnitreeApiAdapter::UpdateLowState() {
       imu_state_interface_[8].get().get_value();
   low_state_msg.imu_state.accelerometer[2] =
       imu_state_interface_[9].get().get_value();
+
+  // force sensor
+  // Arrays: 0-FR, 1-FL, 2-RR, 3-RL
+  double fr_fx = ft_sensor_fx_state_interface_[0].get().get_value();
+  double fr_fy = ft_sensor_fy_state_interface_[0].get().get_value();
+  double fr_fz = ft_sensor_fz_state_interface_[0].get().get_value();
+  low_state_msg.foot_force[0] =
+      sqrt(fr_fx * fr_fx + fr_fy * fr_fy + fr_fz * fr_fz);
+
+  double fl_fx = ft_sensor_fx_state_interface_[1].get().get_value();
+  double fl_fy = ft_sensor_fy_state_interface_[1].get().get_value();
+  double fl_fz = ft_sensor_fz_state_interface_[1].get().get_value();
+  low_state_msg.foot_force[1] =
+      sqrt(fl_fx * fl_fx + fl_fy * fl_fy + fl_fz * fl_fz);
+
+  double rr_fx = ft_sensor_fx_state_interface_[2].get().get_value();
+  double rr_fy = ft_sensor_fy_state_interface_[2].get().get_value();
+  double rr_fz = ft_sensor_fz_state_interface_[2].get().get_value();
+  low_state_msg.foot_force[2] =
+      sqrt(rr_fx * rr_fx + rr_fy * rr_fy + rr_fz * rr_fz);
+
+  double rl_fx = ft_sensor_fx_state_interface_[3].get().get_value();
+  double rl_fy = ft_sensor_fy_state_interface_[3].get().get_value();
+  double rl_fz = ft_sensor_fz_state_interface_[3].get().get_value();
+  low_state_msg.foot_force[3] =
+      sqrt(rl_fx * rl_fx + rl_fy * rl_fy + rl_fz * rl_fz);
 
   low_state_pub_->publish(low_state_msg);
 }

@@ -32,7 +32,7 @@ ament_target_dependencies(${PROJECT_NAME} PUBLIC ${dependencies})
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>" PRIVATE src)
-pluginlib_export_plugin_description_file(${PROJECT_NAME} unitree_api_adapter.xml)
+pluginlib_export_plugin_description_file(controller_interface unitree_api_adapter.xml)
 
 if (BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -48,15 +48,13 @@ endif ()
 
 ## The install and export configuration
 # library targets that external packages may use
-install(
-    TARGETS ${PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME}
     EXPORT export_${PROJECT_NAME}
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin)
 
-install(
-    DIRECTORY include/
+install(DIRECTORY include/
     DESTINATION include/${PROJECT_NAME})
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
